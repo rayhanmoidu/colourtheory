@@ -4,7 +4,8 @@ int w = 700;
 int h = 500;
 int colorgrid_width = 500;
 int colorgrid_height = 500;
-Vector[][] colorGrid;
+Vector[][] emptyColorGrid = new Vector[colorgrid_width][colorgrid_height];
+Vector[][] colorGrid = new Vector[colorgrid_width][colorgrid_height];
 int colorgrid_hoffset = 200;
 int colorgrid_voffset = 0;
 
@@ -17,7 +18,10 @@ int numColors = 5;
 int curSelectedColor = 0;
 
 Button[] incrementors = new Button[4];
-int numIncrementors = 2;
+int numIncrementors = 4;
+
+Button[] rectangleButtons = new Button[3];
+int numRectangleButtons = 3;
 
 int panel_width = 200;
 int radius_circle = 55;
@@ -25,28 +29,53 @@ float leftover_space = panel_width - (2 * radius_circle);
 float color_gapX = leftover_space / 3;
 float color_gapY = 75;
 int numColorRows = (numColors / 2) + (numColors % 2);
-float barrier1_y = color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
+float buttonWidth = 40;
+float buttonHeight = 15;
+float buttonGap = (panel_width - 3*buttonWidth) / 5;
+float colorbox_dimension = panel_width / 2;
+
+float hbarrier1_y = color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
+float hbarrier2_y = hbarrier1_y + color_gapX * 3;
+float hbarrier3_y = hbarrier2_y + color_gapX + buttonHeight;
+float hbarrier4_y = hbarrier3_y + colorbox_dimension;
+float vbarrier1_x = buttonGap*2 + buttonWidth;
+float vbarrier2_x = colorbox_dimension;
+
 int sliderMargin = 24;
 
-int numOpacityLevels = 5;
-int curOpacityLevel = 1;
+int numOpacityLevels = 10;
+int curOpacityLevel = 5;
 float opacityFactor = 0.005;
 
-int numRadiusLevels = 5;
-int curRadiusLevel = 1;
-float radiusFactor = 25;
-int radius = round(radiusFactor * curRadiusLevel);
+int numRadiusLevels = 10;
+int curRadiusLevel = 5;
+float radiusFactor = 10;
 
 int laststamp_x = -1;
 int laststamp_y = -1;
-int spacing = 3;
+int spacing = 1;
+
+boolean isDrawMode = true;
+
+float[] destinationColor = {-1, -1, -1};
+float[] sampleColor = {-1, -1, -1};
+
+int sampleRadius = 3;
+
+
 
 void setup() {
-  print(color_gapX);
   size(700, 500);
   setupDefaultColors();
+  destinationColor[0] = random(0, 255);
+  destinationColor[1] = random(0, 255);
+  destinationColor[2] = random(0, 255);
   
-  colorGrid = new Vector[colorgrid_width][colorgrid_height];
+  for (int i = 0; i < colorgrid_width; i++) {
+    for (int j = 0; j < colorgrid_height; j++) {
+      emptyColorGrid[i][j] = new Vector(255, 255, 255);
+    }
+  }
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
       colorGrid[i][j] = new Vector(255, 255, 255);
@@ -58,6 +87,17 @@ void setup() {
   cur_color_c = baseColors[curSelectedColor].getC();
   
   rectMode(RADIUS);  
+}
+
+Vector[][] copyCanvasColors(Vector[][] src, Vector[][] dest) {
+  for (int i = 0; i < colorgrid_width; i++) {
+    for (int j = 0; j < colorgrid_height; j++) {
+      dest[i][j].a = src[i][j].a;
+      dest[i][j].b = src[i][j].b;
+      dest[i][j].c = src[i][j].c;
+    }
+  }
+  return dest;
 }
 
 void setupDefaultColors() {
@@ -72,20 +112,9 @@ void setupDefaultColors() {
   for (int i = 0; i < colors.length; i++) {
     float xMult = (i%2==0) ? 0.5 : 1.5;
     float gapMult = (i%2==0) ? 1 : 2;
-    print(color_gapX + (radius_circle / 2) + color_gapY * (i / 2), "\n");
-    Button newcolor = new Button(colors[i][0], colors[i][1], colors[i][2], (color_gapX*gapMult) + (radius_circle * xMult), color_gapX + (radius_circle / 2) + color_gapY * (i / 2), radius_circle);
+    Button newcolor = new Button("circle", colors[i][0], colors[i][1], colors[i][2], (color_gapX*gapMult) + (radius_circle * xMult), color_gapX + (radius_circle / 2) + color_gapY * (i / 2), radius_circle, radius_circle);
     baseColors[i] = newcolor;
   }
-  
-  //baseColors[0] = red;
-  //baseColors[1] = blue;
-  //baseColors[2] = green;
-  //baseColors[3] = black;
-  //baseColors[4] = white;
-  
-  //for (int i = 0; i < 10; i++) {
-  //  print("\n", baseColors[i].length);
-  //}
 }
 
 void draw() {
@@ -100,18 +129,72 @@ void draw() {
   
   // Control Panel
   drawColors();
-  drawBarrier(barrier1_y);
-  drawSliders();
-    
+  drawHBarrier(hbarrier1_y);
+  drawSlider(hbarrier1_y, curOpacityLevel, "opacity", 0);
+  drawSlider(hbarrier1_y + color_gapX, curRadiusLevel, "radius", 2);
+  drawHBarrier(hbarrier2_y);
+  
+  drawButton(buttonGap, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Reset", true, 0);
+  drawVBarrier(vbarrier1_x, hbarrier2_y, hbarrier3_y);
+  drawButton(buttonGap*3 + buttonWidth, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Draw", isDrawMode, 1);
+  drawButton(buttonGap*4 + buttonWidth*2, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Sample", !isDrawMode, 2);
+  drawHBarrier(hbarrier3_y);
+  drawHBarrier(hbarrier4_y);
+  drawVBarrier(vbarrier2_x, hbarrier3_y, hbarrier4_y);
+  drawColor(true);
+  drawColor(false);
+  //drawButtonS
 }
 
-void drawBarrier(float yPos) {
+void drawColor(boolean isDestination) {
+  if (isDestination) {
+    fill(destinationColor[0], destinationColor[1], destinationColor[2]);
+    stroke(destinationColor[0], destinationColor[1], destinationColor[2]);
+    circle(colorbox_dimension / 2, hbarrier3_y + colorbox_dimension / 2, radius_circle);
+  } else {
+    if (sampleColor[0]==-1 && sampleColor[1]==-1 && sampleColor[2]==-1) {
+      stroke(0);
+      fill(175);
+      circle(colorbox_dimension * 1.5, hbarrier3_y + colorbox_dimension / 2, radius_circle);
+    } else {
+      fill(sampleColor[0], sampleColor[1], sampleColor[2]);
+      stroke(sampleColor[0], sampleColor[1], sampleColor[2]);
+      circle(colorbox_dimension * 1.5, hbarrier3_y + colorbox_dimension / 2, radius_circle);
+    }
+  }
+}
+
+void drawVBarrier(float xPos, float startYPos, float endYPos) {
   stroke(0, 0, 0);
   strokeWeight(1);
-  line(0, yPos, panel_width, barrier1_y);
+  line(xPos, startYPos, xPos, endYPos);
 }
 
-void drawSliders() {
+void drawHBarrier(float yPos) {
+  stroke(0, 0, 0);
+  strokeWeight(1);
+  line(0, yPos, panel_width, yPos);
+}
+
+void drawButton(float xPos, float yPos, float rectw, float recth, String id, boolean isEnabled, int index) {
+  fill(236);
+  rectMode(CORNER);
+  rect(xPos, yPos, rectw, recth);
+  fill(0);
+  textAlign(CENTER, CENTER);
+  textSize(10);
+  text(id, xPos + rectw/2, yPos + recth/2);
+  
+  Button newRectangleButton = new Button("rectangle", 0, 0, 0, xPos + rectw/2, yPos + recth/2, rectw, recth, id, false);
+  rectangleButtons[index] = newRectangleButton;
+  
+  if (!isEnabled) {
+    fill(0, 125);
+    rect(xPos, yPos, rectw, recth);
+  }
+}
+
+void drawSlider(float yPos, float value, String sliderId, int buttonStartIndex) {
   stroke(0, 0, 0);
   strokeWeight(2);
   float outerTickLength = 5;
@@ -120,37 +203,37 @@ void drawSliders() {
   
   // Opacity slider
   // Main line
-  line(color_gapX + sliderMargin, barrier1_y + color_gapX, panel_width - color_gapX - sliderMargin, barrier1_y + color_gapX);
+  line(color_gapX + sliderMargin, yPos + color_gapX, panel_width - color_gapX - sliderMargin, yPos + color_gapX);
   // Outer ticks
-  line(color_gapX + sliderMargin, barrier1_y + color_gapX - outerTickLength, color_gapX + sliderMargin, barrier1_y + color_gapX + outerTickLength);
-  line(panel_width - color_gapX - sliderMargin, barrier1_y + color_gapX - outerTickLength, panel_width - color_gapX - sliderMargin, barrier1_y + color_gapX + outerTickLength);
+  line(color_gapX + sliderMargin, yPos + color_gapX - outerTickLength, color_gapX + sliderMargin, yPos + color_gapX + outerTickLength);
+  line(panel_width - color_gapX - sliderMargin, yPos + color_gapX - outerTickLength, panel_width - color_gapX - sliderMargin, yPos + color_gapX + outerTickLength);
   // Inner ticks
   strokeWeight(1);
   for (int i = 1; i <= numOpacityLevels; i++) {
-    line(color_gapX + sliderMargin + innerTickGap*i, barrier1_y + color_gapX - innerTickLength, color_gapX + sliderMargin + innerTickGap*i, barrier1_y + color_gapX + innerTickLength);
+    line(color_gapX + sliderMargin + innerTickGap*i, yPos + color_gapX - innerTickLength, color_gapX + sliderMargin + innerTickGap*i, yPos + color_gapX + innerTickLength);
   }
   // Value indicator
   strokeWeight(3);
   stroke(255, 255, 0);
-  line(color_gapX + sliderMargin + 3, barrier1_y + color_gapX, color_gapX + sliderMargin + innerTickGap*curOpacityLevel, barrier1_y + color_gapX);
+  line(color_gapX + sliderMargin + 3, yPos + color_gapX, color_gapX + sliderMargin + innerTickGap*value, yPos + color_gapX);
   
   // Incrementors
   // circles
   fill(236);
   strokeWeight(0);
-  circle(color_gapX + sliderMargin/2, barrier1_y + color_gapX, 12);
-  circle(panel_width - color_gapX - sliderMargin/2, barrier1_y + color_gapX, 12);
-  Button opacity_minus_indicator = new Button(236, 236, 236, color_gapX + sliderMargin/2, barrier1_y + color_gapX, 12, "opacity", true);
-  Button opacity_plus_indicator = new Button(236, 236, 236, panel_width - color_gapX - sliderMargin/2, barrier1_y + color_gapX, 12, "opacity", false);
-  incrementors[0] = opacity_minus_indicator;
-  incrementors[1] = opacity_plus_indicator;
+  circle(color_gapX + sliderMargin/2, yPos + color_gapX, 12);
+  circle(panel_width - color_gapX - sliderMargin/2, yPos + color_gapX, 12);
+  Button opacity_minus_indicator = new Button("circle", 236, 236, 236, color_gapX + sliderMargin/2, yPos + color_gapX, 12, 12, sliderId, false);
+  Button opacity_plus_indicator = new Button("circle", 236, 236, 236, panel_width - color_gapX - sliderMargin/2, yPos + color_gapX, 12, 12, sliderId, true);
+  incrementors[buttonStartIndex] = opacity_minus_indicator;
+  incrementors[buttonStartIndex+1] = opacity_plus_indicator;
 
   // plus / minus
   strokeWeight(1);
   stroke(2);
-  line(color_gapX + sliderMargin/2 - 3, barrier1_y + color_gapX, color_gapX + sliderMargin/2 + 3, barrier1_y + color_gapX);
-  line(panel_width - color_gapX - sliderMargin/2 - 3, barrier1_y + color_gapX, panel_width - color_gapX - sliderMargin/2 + 3, barrier1_y + color_gapX);
-  line(panel_width - color_gapX - sliderMargin/2, barrier1_y + color_gapX - 3, panel_width - color_gapX - sliderMargin/2, barrier1_y + color_gapX + 3);
+  line(color_gapX + sliderMargin/2 - 3, yPos + color_gapX, color_gapX + sliderMargin/2 + 3, yPos + color_gapX);
+  line(panel_width - color_gapX - sliderMargin/2 - 3, yPos + color_gapX, panel_width - color_gapX - sliderMargin/2 + 3, yPos + color_gapX);
+  line(panel_width - color_gapX - sliderMargin/2, yPos + color_gapX - 3, panel_width - color_gapX - sliderMargin/2, yPos + color_gapX + 3);
 }
 
 void drawColors() {
@@ -170,6 +253,36 @@ float distFromLastStamp(int x, int y) {
   float diffx = x - laststamp_x;
   float diffy = y - laststamp_y;
   return sqrt(diffx*diffx + diffy*diffy);
+}
+
+void sampleColor(int x, int y) {
+  int bbox_minx = max(x - sampleRadius, 0);
+  int bbox_miny = max(y - sampleRadius, 0);
+  int bbox_maxx = min(x + sampleRadius, colorgrid_width);
+  int bbox_maxy = min(y + sampleRadius, colorgrid_height);
+  
+  float asum = 0;
+  float bsum = 0;
+  float csum = 0;
+  int numPixels = 0;
+  
+  for (int i = bbox_minx; i < bbox_maxx; i++) {
+    for (int j = bbox_miny; j < bbox_maxy; j++) {
+      int diffx = x - i;
+      int diffy = y - j;
+      float diff = sqrt(diffx*diffx + diffy*diffy);
+      if (diff <= sampleRadius) {
+        numPixels += 1;
+        asum += colorGrid[i][j].a;
+        bsum += colorGrid[i][j].b;
+        csum += colorGrid[i][j].c;
+      }
+    }
+  }
+  
+  sampleColor[0] = asum / numPixels;
+  sampleColor[1] = bsum / numPixels;
+  sampleColor[2] = csum / numPixels;
 }
 
 void extendStroke(int x, int y) {
@@ -200,6 +313,7 @@ void extendStroke(int x, int y) {
 void placeStamp(int x, int y) {
   laststamp_x = x;
   laststamp_y = y;
+  int radius = getRadius();
   int bbox_minx = max(x - radius, 0);
   int bbox_miny = max(y - radius, 0);
   int bbox_maxx = min(x + radius, colorgrid_width);
@@ -221,12 +335,35 @@ void placeStamp(int x, int y) {
 }
 
 void incrementOpacity(boolean isPlus) {
-  print("hehe\n");
-  curOpacityLevel = isPlus ? min(numOpacityLevels, curOpacityLevel + 1) : max(1, curOpacityLevel - 1);
+  if (isPlus) {
+    curOpacityLevel += 1;
+    if (curOpacityLevel > numOpacityLevels) {
+      curOpacityLevel -= 1;
+    }
+  } else {
+    curOpacityLevel -= 1;
+    if (curOpacityLevel < 0) {
+      curOpacityLevel += 1;
+    }
+  }
+}
+
+int getRadius() {
+  return round(radiusFactor * curRadiusLevel);
 }
 
 void incrementRadius(boolean isPlus) {
-  curRadiusLevel = isPlus ? min(numRadiusLevels, curRadiusLevel + 1) : max(1, curRadiusLevel - 1);
+  if (isPlus) {
+    curRadiusLevel += 1;
+    if (curRadiusLevel > numRadiusLevels) {
+      curRadiusLevel -= 1;
+    }
+  } else {
+    curRadiusLevel -= 1;
+    if (curRadiusLevel < 0) {
+      curRadiusLevel += 1;
+    }
+  }
 }
 
 void mousePressed() {
@@ -246,15 +383,23 @@ void mousePressed() {
         cur_color_c = baseColors[i].getC();
       }
     }
-    for (int i = 0; i < numButtons; i++) {
-      print("hello \n",);
+    for (int i = 0; i < numIncrementors; i++) {
       if (incrementors[i].testClick(mouseX, mouseY)) {
-        print("goodbye \n");
-        if (incrementors[i].sliderId == "opacity") {
-          print("lala \n");
+        if (incrementors[i].buttonId == "opacity") {
           incrementOpacity(incrementors[i].isPlus);
-        } else if (incrementors[i].sliderId == "radius") {
+        } else if (incrementors[i].buttonId == "radius") {
           incrementRadius(incrementors[i].isPlus);
+        }
+      }
+    }
+    for (int i = 0; i < numRectangleButtons; i++) {
+      if (rectangleButtons[i].testClick(mouseX, mouseY)) {
+        if (rectangleButtons[i].buttonId == "Reset") {
+          colorGrid = copyCanvasColors(emptyColorGrid, colorGrid);
+        } else if (rectangleButtons[i].buttonId == "Draw") {
+          isDrawMode = true;
+        } else if (rectangleButtons[i].buttonId == "Sample") {
+          isDrawMode = false;
         }
       }
     }
@@ -263,7 +408,11 @@ void mousePressed() {
 
 void mouseDragged() {
   if (mouselocked) {
-    extendStroke(mouseX - colorgrid_hoffset, mouseY - colorgrid_voffset);
+    if (isDrawMode) {
+      extendStroke(mouseX - colorgrid_hoffset, mouseY - colorgrid_voffset);
+    } else {
+      sampleColor(mouseX - colorgrid_hoffset, mouseY - colorgrid_voffset);
+    }
   }
 }
 
