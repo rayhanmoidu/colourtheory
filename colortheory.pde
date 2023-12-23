@@ -1,12 +1,12 @@
 boolean mouselocked = false;
 
-int w = 700;
-int h = 500;
-int colorgrid_width = 500;
-int colorgrid_height = 500;
+int w = 1200;
+int h = 800;
+int colorgrid_width = 960;
+int colorgrid_height = 800;
 Vector[][] emptyColorGrid = new Vector[colorgrid_width][colorgrid_height];
 Vector[][] colorGrid = new Vector[colorgrid_width][colorgrid_height];
-int colorgrid_hoffset = 200;
+int colorgrid_hoffset = 240;
 int colorgrid_voffset = 0;
 
 int cur_color_a = 0;
@@ -20,10 +20,10 @@ int curSelectedColor = 0;
 Button[] incrementors = new Button[4];
 int numIncrementors = 4;
 
-Button[] rectangleButtons = new Button[3];
-int numRectangleButtons = 3;
+Button[] rectangleButtons = new Button[6];
+int numRectangleButtons = 6;
 
-int panel_width = 200;
+int panel_width = 240;
 int radius_circle = 55;
 float leftover_space = panel_width - (2 * radius_circle);
 float color_gapX = leftover_space / 3;
@@ -33,19 +33,23 @@ float buttonWidth = 40;
 float buttonHeight = 15;
 float buttonGap = (panel_width - 3*buttonWidth) / 5;
 float colorbox_dimension = panel_width / 2;
+float colorbox_gap = (colorbox_dimension - radius_circle) / 2;
 
 float hbarrier1_y = color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
 float hbarrier2_y = hbarrier1_y + color_gapX * 3;
 float hbarrier3_y = hbarrier2_y + color_gapX + buttonHeight;
-float hbarrier4_y = hbarrier3_y + colorbox_dimension;
+float hbarrier4_y = hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX + buttonHeight;
+float hbarrier5_y = hbarrier4_y + colorbox_dimension;
 float vbarrier1_x = buttonGap*2 + buttonWidth;
 float vbarrier2_x = colorbox_dimension;
+float vbarrier3_x = colorbox_dimension;
+
 
 int sliderMargin = 24;
 
 int numOpacityLevels = 10;
 int curOpacityLevel = 5;
-float opacityFactor = 0.005;
+float opacityFactor = 0.001;
 
 int numRadiusLevels = 10;
 int curRadiusLevel = 5;
@@ -59,17 +63,18 @@ boolean isDrawMode = true;
 
 float[] destinationColor = {-1, -1, -1};
 float[] sampleColor = {-1, -1, -1};
+float[] winningColor = {-1, -1, -1};
 
 int sampleRadius = 3;
-
-
+float finalResult = -1;
+int numCorrect = 0;
+int numGoals = 0;
+boolean hasWonThisRound = false;
 
 void setup() {
-  size(700, 500);
+  size(1200, 800);
   setupDefaultColors();
-  destinationColor[0] = random(0, 255);
-  destinationColor[1] = random(0, 255);
-  destinationColor[2] = random(0, 255);
+  setRandomDestinationColor();
   
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
@@ -87,6 +92,15 @@ void setup() {
   cur_color_c = baseColors[curSelectedColor].getC();
   
   rectMode(RADIUS);  
+}
+
+void setRandomDestinationColor() {
+  destinationColor[0] = random(0, 255);
+  destinationColor[1] = random(0, 255);
+  destinationColor[2] = random(0, 255);
+  numGoals ++;
+  finalResult = -1;
+  hasWonThisRound = false;
 }
 
 Vector[][] copyCanvasColors(Vector[][] src, Vector[][] dest) {
@@ -140,10 +154,50 @@ void draw() {
   drawButton(buttonGap*4 + buttonWidth*2, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Sample", !isDrawMode, 2);
   drawHBarrier(hbarrier3_y);
   drawHBarrier(hbarrier4_y);
+  drawHBarrier(hbarrier5_y);
   drawVBarrier(vbarrier2_x, hbarrier3_y, hbarrier4_y);
+  drawVBarrier(vbarrier3_x, hbarrier4_y, hbarrier5_y);
   drawColor(true);
   drawColor(false);
+  drawButton(colorbox_dimension/2 - buttonWidth/2, hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX/2, buttonWidth, buttonHeight, "Refresh", true, 3);
+  float samplebutton_gap = (colorbox_dimension - buttonWidth*2) / 3;
+  drawButton(colorbox_dimension + samplebutton_gap, hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX/2, buttonWidth, buttonHeight, "Submit", true, 4);
+  drawButton(colorbox_dimension + samplebutton_gap*2 + buttonWidth, hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX/2, buttonWidth, buttonHeight, "Save", true, 5);
+  drawScore();
+  drawResult();
   //drawButtonS
+}
+
+void drawResult() {
+  if (finalResult == -1) {
+    return;
+  }
+  int numDigits = finalResult >= 10 ? finalResult >= 100 ? 3 : 2 : 1;
+  String finalres_string = nf(finalResult, numDigits, 0) + "%";
+  textSize(32);
+  if (finalResult >= 95) {
+    fill(winningColor[0], winningColor[1], winningColor[2]);    
+    text(finalres_string, colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 - 20);
+    //fill(255 - sampleColor[0], 255 - sampleColor[1], 255 - sampleColor[2]);
+    textSize(24);
+    text("YAY!", colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 + 20);
+    
+  } else {
+    fill(0);
+    text(finalres_string, colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 - 20);
+    //fill(255, 255, 255);
+    textSize(24);
+    text("Oh no :(", colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 + 20);
+  }
+}
+
+void drawScore() {
+  textSize(32);
+  strokeWeight(2);
+  float result_fractionWidth = 24;
+  text(numCorrect, colorbox_dimension/2, hbarrier4_y + colorbox_dimension/2 - 20);
+  line(colorbox_dimension/2 - result_fractionWidth/2, hbarrier4_y + colorbox_dimension/2, colorbox_dimension/2 + result_fractionWidth/2, hbarrier4_y + colorbox_dimension/2);
+  text(numGoals, colorbox_dimension/2, hbarrier4_y + colorbox_dimension/2 + 20);
 }
 
 void drawColor(boolean isDestination) {
@@ -162,6 +216,7 @@ void drawColor(boolean isDestination) {
       circle(colorbox_dimension * 1.5, hbarrier3_y + colorbox_dimension / 2, radius_circle);
     }
   }
+  stroke(0);
 }
 
 void drawVBarrier(float xPos, float startYPos, float endYPos) {
@@ -173,7 +228,7 @@ void drawVBarrier(float xPos, float startYPos, float endYPos) {
 void drawHBarrier(float yPos) {
   stroke(0, 0, 0);
   strokeWeight(1);
-  line(0, yPos, panel_width, yPos);
+  line(0, yPos, panel_width-1, yPos);
 }
 
 void drawButton(float xPos, float yPos, float rectw, float recth, String id, boolean isEnabled, int index) {
@@ -241,11 +296,17 @@ void drawColors() {
     if (i==curSelectedColor) {
       stroke(255, 255, 0);
       fill(255, 255, 0);
-      circle(baseColors[i].getX(), baseColors[i].getY(), radius_circle + 5);
+      circle(baseColors[i].getX(), baseColors[i].getY(), radius_circle + 6);
     }
     stroke(baseColors[i].getColor());
     fill(baseColors[i].getColor());
     circle(baseColors[i].getX(), baseColors[i].getY(), radius_circle);
+  }
+  if (numColors==5) {
+      strokeWeight(1);
+      stroke(0);
+      fill(175);
+      circle((color_gapX*2) + (radius_circle * 1.5), color_gapX + (radius_circle / 2) + color_gapY * (2), radius_circle);
   }
 }
 
@@ -377,6 +438,7 @@ void mousePressed() {
   } else {
     for (int i = 0; i < numColors; i++) {
       if (baseColors[i].testClick(mouseX, mouseY)) {
+        isDrawMode = true;
         curSelectedColor = i;
         cur_color_a = baseColors[i].getA();
         cur_color_b = baseColors[i].getB();
@@ -400,9 +462,40 @@ void mousePressed() {
           isDrawMode = true;
         } else if (rectangleButtons[i].buttonId == "Sample") {
           isDrawMode = false;
+        } else if (rectangleButtons[i].buttonId == "Refresh") {
+          setRandomDestinationColor();
+        } else if (rectangleButtons[i].buttonId == "Submit") {
+          submitSample();
+        } else if (rectangleButtons[i].buttonId == "Save") {
+          saveSampleColor();
         }
       }
     }
+  }
+}
+
+void saveSampleColor() {
+  numColors = min(6, numColors+1);
+  Button newcolor = new Button("circle", int(sampleColor[0]), int(sampleColor[1]), int(sampleColor[2]), (color_gapX*2) + (radius_circle * 1.5), color_gapX + (radius_circle / 2) + color_gapY * (2), radius_circle, radius_circle);
+  baseColors[5] = newcolor;
+}
+
+void submitSample() {
+  if (sampleColor[0]==-1 && sampleColor[1]==-1 && sampleColor[2]==-1) {
+    return;
+  }
+  float diff_a = (255 - abs(destinationColor[0]-sampleColor[0])) / 255;
+  float diff_b = (255 - abs(destinationColor[1]-sampleColor[1])) / 255;
+  float diff_c = (255 - abs(destinationColor[2]-sampleColor[2])) / 255;
+  float res = round( ((diff_a + diff_b + diff_c) / 3 ) * 100);
+  finalResult = res;
+  
+  if (finalResult >= 95 && !hasWonThisRound) {
+    hasWonThisRound = true;
+    numCorrect++;
+    winningColor[0] = sampleColor[0];
+    winningColor[1] = sampleColor[1];
+    winningColor[2] = sampleColor[2];
   }
 }
 
