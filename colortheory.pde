@@ -51,7 +51,7 @@ int sliderMargin = 24;
 
 int numOpacityLevels = 10;
 int curOpacityLevel = 5;
-float opacityFactor = 0.0005;
+float opacityFactor = 0.005;
 
 int numRadiusLevels = 10;
 int curRadiusLevel = 5;
@@ -59,7 +59,7 @@ float radiusFactor = 10;
 
 int laststamp_x = -1;
 int laststamp_y = -1;
-int spacing = 1;
+int spacing = 5;
 
 boolean isDrawMode = true;
 
@@ -74,6 +74,8 @@ float finalResult = -1;
 int numCorrect = 0;
 int numGoals = 0;
 boolean hasWonThisRound = false;
+
+byte lut[];
 
 void setup() {
   mixbox = new Mixbox();
@@ -95,6 +97,35 @@ void setup() {
   cur_color_a = baseColors[curSelectedColor].getA();
   cur_color_b = baseColors[curSelectedColor].getB();
   cur_color_c = baseColors[curSelectedColor].getC();
+  
+
+  lut = new byte[64 * 64 * 64 * 3 + 4353];
+
+  try {
+      byte[] deflatedBytes = new byte[113551 - 192];
+      print("lala\n");
+      
+      InputStream dis = createInput("mixbox_lut.dat");
+      
+      //DataInputStream dis = new DataInputStream(new FileInputStream("./mixbox_lut.dat"));
+      print("lala3\n");
+      dis.read(deflatedBytes);
+      dis.close();
+
+      Inflater inflater = new Inflater(true);
+      inflater.setInput(deflatedBytes);
+      inflater.inflate(lut);
+
+      for (int i = 0; i < lut.length; i++) {
+          lut[i] = (byte)((((i & 63) != 0) ? lut[i - 1] : 127) + (lut[i] - 127));
+      }
+  } catch (Exception e) {
+      print("no");
+  }
+  
+  //float[] one = {255, 255, 0};
+  //float[] two = {}
+  //Mixbox.lerpFloat(start_color, new_color, weight, lut);
   
   rectMode(RADIUS);  
 }
@@ -123,10 +154,11 @@ void setupDefaultColors() {
   int[] red = {255, 0, 0};
   int[] blue = {0, 0, 255};
   int[] green = {0, 255, 0};
+  int[] yellow = {255, 255, 0};
   int[] black = {0, 0, 0};
   int[] white = {255, 255, 255};
   
-  int[][] colors = {red, blue, green, black, white};
+  int[][] colors = {red, blue, yellow, black, white};
     
   for (int i = 0; i < colors.length; i++) {
     float xMult = (i%2==0) ? 0.5 : 1.5;
@@ -394,7 +426,7 @@ void placeStamp(int x, int y) {
       if (diff <= radius) {
         float u2 = (diff*diff) / (radius*radius);
         colorGrid[i][j].accumulateWeight(u2, opacityFactor * curOpacityLevel);
-        colorGrid[i][j].merge_pigment(cur_color_a, cur_color_b, cur_color_c, u2, mixbox);
+        colorGrid[i][j].merge_pigment(cur_color_a, cur_color_b, cur_color_c, u2, lut);
         //print("yes\n");
       }
     }

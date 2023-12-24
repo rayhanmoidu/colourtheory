@@ -52,13 +52,13 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.util.zip.Inflater;
 
-public final class Mixbox {
+public static final class Mixbox {
 
     public static final int LATENT_SIZE = 7;
 
-    public int lerp(int color1, int color2, float t) {
-        final float[] latent1 = rgbToLatent(color1);
-        final float[] latent2 = rgbToLatent(color2);
+    public static int lerp(int color1, int color2, float t, byte[] lut) {
+        final float[] latent1 = rgbToLatent(color1, lut);
+        final float[] latent2 = rgbToLatent(color2, lut);
 
         float[] latentMix = new float[LATENT_SIZE];
 
@@ -73,9 +73,9 @@ public final class Mixbox {
         return (alphaMix << 24) | (latentToRgb(latentMix) & 0xFFFFFF);
     }
 
-    public int[] lerp(int[] color1, int[] color2, float t) {
-        final float[] latent1 = rgbToLatent(color1);
-        final float[] latent2 = rgbToLatent(color2);
+    public static int[] lerp(int[] color1, int[] color2, float t, byte[] lut) {
+        final float[] latent1 = rgbToLatent(color1, lut);
+        final float[] latent2 = rgbToLatent(color2, lut);
 
         float[] latentMix = new float[LATENT_SIZE];
 
@@ -96,9 +96,9 @@ public final class Mixbox {
         return new int[] { (colorMix>>16) & 0xFF, (colorMix>>8) & 0xFF, colorMix & 0xFF, alphaMix };
     }
 
-    public float[] lerpFloat(float[] color1, float[] color2, float t) {
-        final float[] latent1 = floatRgbToLatent(color1[0], color1[1], color1[2]);
-        final float[] latent2 = floatRgbToLatent(color2[0], color2[1], color2[2]);
+    public static float[] lerpFloat(float[] color1, float[] color2, float t, byte[] lut) {
+        final float[] latent1 = floatRgbToLatent(color1[0], color1[1], color1[2], lut);
+        final float[] latent2 = floatRgbToLatent(color2[0], color2[1], color2[2], lut);
 
         float[] latentMix = new float[LATENT_SIZE];
 
@@ -117,9 +117,9 @@ public final class Mixbox {
         return new float[] { colorMix[0], colorMix[1], colorMix[2], alphaMix };
     }
 
-    public float[] lerpLinearFloat(float[] color1, float[] color2, float t) {
-        final float[] latent1 = linearFloatRgbToLatent(color1[0], color1[1], color1[2]);
-        final float[] latent2 = linearFloatRgbToLatent(color2[0], color2[1], color2[2]);
+    public static float[] lerpLinearFloat(float[] color1, float[] color2, float t, byte[] lut) {
+        final float[] latent1 = linearFloatRgbToLatent(color1[0], color1[1], color1[2], lut);
+        final float[] latent2 = linearFloatRgbToLatent(color2[0], color2[1], color2[2], lut);
 
         float[] latentMix = new float[LATENT_SIZE];
 
@@ -138,19 +138,19 @@ public final class Mixbox {
         return new float[] { colorMix[0], colorMix[1], colorMix[2], alphaMix };
     }
 
-    public float[] rgbToLatent(int r, int g, int b) {
-        return floatRgbToLatent(((float)r) / 255.0f, ((float)g) / 255.0f, ((float)b) / 255.0f);
+    public static float[] rgbToLatent(int r, int g, int b, byte[] lut) {
+        return floatRgbToLatent(((float)r) / 255.0f, ((float)g) / 255.0f, ((float)b) / 255.0f, lut);
     }
 
-    public float[] rgbToLatent(int[] rgb) {
-        return rgbToLatent(rgb[0], rgb[1], rgb[2]);
+    public static float[] rgbToLatent(int[] rgb, byte[] lut) {
+        return rgbToLatent(rgb[0], rgb[1], rgb[2], lut);
     }
 
-    public float[] rgbToLatent(int colorc) {
-        return rgbToLatent((colorc >> 16) & 0xFF, (colorc >> 8) & 0xFF, colorc & 0xFF);
+    public static float[] rgbToLatent(int colorc, byte[] lut) {
+        return rgbToLatent((colorc >> 16) & 0xFF, (colorc >> 8) & 0xFF, colorc & 0xFF, lut);
     }
 
-    public int latentToRgb(float[] latent) {
+    public static int latentToRgb(float[] latent) {
         final float[] rgb = evalPolynomial(latent[0], latent[1], latent[2], latent[3]);
         return (0xFF000000 |
                (((int)Math.round(clamp01(rgb[0] + latent[4]) * 255.0f)) << 16) |
@@ -158,7 +158,7 @@ public final class Mixbox {
                (((int)Math.round(clamp01(rgb[2] + latent[6]) * 255.0f))      ));
     }
 
-    public float[] floatRgbToLatent(float r, float g, float b) {
+    public static float[] floatRgbToLatent(float r, float g, float b, byte[] lut) {
         r = clamp01(r);
         g = clamp01(g);
         b = clamp01(b);
@@ -242,11 +242,11 @@ public final class Mixbox {
         };
     }
 
-    public float[] floatRgbToLatent(float[] rgb) {
-        return floatRgbToLatent(rgb[0], rgb[1], rgb[2]);
+    public static float[] floatRgbToLatent(float[] rgb, byte[] lut) {
+        return floatRgbToLatent(rgb[0], rgb[1], rgb[2], lut);
     }
 
-    public float[] latentToFloatRgb(float[] latent) {
+    public static float[] latentToFloatRgb(float[] latent) {
         final float[] rgb = evalPolynomial(latent[0], latent[1], latent[2], latent[3]);
         return new float[] {
             clamp01(rgb[0] + latent[4]),
@@ -255,17 +255,17 @@ public final class Mixbox {
         };
     }
 
-    public float[] linearFloatRgbToLatent(float r, float g, float b) {
+    public static float[] linearFloatRgbToLatent(float r, float g, float b, byte[] lut) {
         return floatRgbToLatent(linearToSrgb(r),
                                 linearToSrgb(g),
-                                linearToSrgb(b));
+                                linearToSrgb(b), lut);
     }
 
-    public float[] linearFloatRgbToLatent(float[] rgb) {
-        return linearFloatRgbToLatent(rgb[0], rgb[1], rgb[2]);
+    public static float[] linearFloatRgbToLatent(float[] rgb, byte[] lut) {
+        return linearFloatRgbToLatent(rgb[0], rgb[1], rgb[2], lut);
     }
 
-    public float[] latentToLinearFloatRgb(float[] latent) {
+    public static float[] latentToLinearFloatRgb(float[] latent) {
         final float[] rgb = latentToFloatRgb(latent);
         return new float[] {
             srgbToLinear(rgb[0]),
@@ -274,25 +274,25 @@ public final class Mixbox {
         };
     }
 
-    private float clamp01(float x)
+    private static float clamp01(float x)
     {
         return x < 0.0f ? 0.0f : x > 1.0f ? 1.0f : x;
     }
 
-    private int clamp0255(int x)
+    private static int clamp0255(int x)
     {
         return x < 0 ? 0 : x > 255 ? 255 : x;
     }
 
-    private float srgbToLinear(float x) {
+    private static float srgbToLinear(float x) {
         return (x >= 0.04045f) ? (float)Math.pow((x + 0.055f) / 1.055f,2.4f) : x / 12.92f;
     }
 
-    private float linearToSrgb(float x) {
+    private static float linearToSrgb(float x) {
         return (x >= 0.0031308f) ? 1.055f * ((float)Math.pow(x,1.0f / 2.4f)) - 0.055f : 12.92f * x;
     }
 
-    private float[] evalPolynomial(float c0, float c1, float c2, float c3)
+    private static float[] evalPolynomial(float c0, float c1, float c2, float c3)
     {
         float r = 0.0f;
         float g = 0.0f;
@@ -331,29 +331,5 @@ public final class Mixbox {
         return new float[] { r, g, b };
     }
 
-    private final byte lut[];
-
-     {
-        lut = new byte[64 * 64 * 64 * 3 + 4353];
-
-        try {
-            byte[] deflatedBytes = new byte[113551 - 192];
-            print("lala\n");
-            DataInputStream dis = new DataInputStream(new FileInputStream("./mixbox_lut.dat"));
-            print("lala3\n");
-            dis.skipBytes(192);
-            dis.readFully(deflatedBytes);
-            dis.close();
-
-            Inflater inflater = new Inflater(true);
-            inflater.setInput(deflatedBytes);
-            inflater.inflate(lut);
-
-            for (int i = 0; i < lut.length; i++) {
-                lut[i] = (byte)((((i & 63) != 0) ? lut[i - 1] : 127) + (lut[i] - 127));
-            }
-        } catch (Exception e) {
-            print("no");
-        }
-    }
+    
 }

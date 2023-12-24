@@ -85,11 +85,14 @@ class Vector {
     return retVal;
   }
   
-  void merge_pigment(int new_a, int new_b, int new_c, float u2, Mixbox mixbox) {
+  void merge_pigment(int new_a, int new_b, int new_c, float u2, byte[] lut) {
     
-    float[] new_color = {new_a/255, new_b/255, new_c/255};
-    float[] start_color = {start_a/255, start_b/255, start_c/255};
-    float[] res = mixbox.lerpFloat(start_color, new_color, weight);
+    float[] new_color = {float(new_a)/255, float(new_b)/255, float(new_c)/255};
+    float[] start_color = {float(start_a)/255, float(start_b)/255, float(start_c)/255};
+    //if (new_color[2]> 0) {
+    //  print(start_color[0], start_color[1], start_color[2], new_color[0], new_color[1], new_color[2], "\n");
+    //}
+    float[] res = Mixbox.lerpFloat(start_color, new_color, weight, lut);
     //print(res[0], res[1], res[2], weight, "\n");
     ////print(res[0]*255, res[1]*255, res[2]*255, "\n");
     ////float[] new_z = encode(new_a, new_b, new_c);
@@ -107,6 +110,7 @@ class Vector {
     a = round(res[0]*255);
     b = round(res[1]*255);
     c = round(res[2]*255);
+    //print(a, b, c, "\n");
     //a = round(decoded[0]);
     //b = round(decoded[1]);
     //c = round(decoded[2]);
@@ -119,7 +123,7 @@ class Vector {
   }
   
   void accumulateWeight(float u2, float opacity) {
-    weight += (1-weight) * opacity;
+    weight += (1-weight) * opacity * (1-u2);
     weight = min(1, weight);
   }
   
