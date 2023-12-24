@@ -80,12 +80,12 @@ void setup() {
   
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
-      emptyColorGrid[i][j] = new Vector(255, 255, 255);
+      emptyColorGrid[i][j] = new Vector(0, 0, 0);
     }
   }
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
-      colorGrid[i][j] = new Vector(255, 255, 255);
+      colorGrid[i][j] = new Vector(0, 0, 0);
     }
   }
   

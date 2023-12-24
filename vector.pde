@@ -19,11 +19,45 @@ class Vector {
     }
     return (val / ((((1.0/param) - 2.0)*(1.0 - val))+1.0));
   }
+   
   
   void merge_light(int new_a, int new_b, int new_c, float u2) {
-      a = round( weight*new_a + (1-weight)*start_a );
-      b = round( weight*new_b + (1-weight)*start_b );
-      c = round( weight*new_c + (1-weight)*start_c );
+      // for black in light mode, need to make a override toggle
+    ` // use percents not raw vals, 001 should be 100% fac_c, 000 100% all
+      // for ovverride, facs are all 1
+      float fac_a = float(new_a) / 255;
+      float fac_b = float(new_b) / 255;
+      float fac_c = float(new_c) / 255;
+      
+      float colorsum = new_a + new_b + new_c;
+      
+      //float fac_a = float(new_a) / colorsum;
+      //float fac_b = float(new_b) / colorsum;
+      //float fac_c = float(new_c) / colorsum;
+      //float fac_a = int(new_a > 0);
+      //float fac_b = int(new_b > 0);
+      //float fac_c = int(new_c > 0);
+      if (colorsum == 0) {
+        fac_a = 1;
+        fac_b = 1;
+        fac_c = 1;
+      }
+      
+      
+       
+      
+      //if (new_a < 255 && new_b < 255 && new_c < 255) {
+
+      ////print(fac_a, fac_b, fac_c, "\n");
+      //}
+      
+      float finalWeight_a = weight * fac_a;
+      float finalWeight_b = weight * fac_b;
+      float finalWeight_c = weight * fac_c;
+      
+      a = round( finalWeight_a*new_a + (1-finalWeight_a)*start_a );
+      b = round( finalWeight_b*new_b + (1-finalWeight_b)*start_b );
+      c = round( finalWeight_c*new_c + (1-finalWeight_c)*start_c );
   }
   
   float[] encode(float a, float b, float c) {
