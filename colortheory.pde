@@ -2,8 +2,10 @@ boolean mouselocked = false;
 
 int w = 1200;
 int h = 800;
-int colorgrid_width = 960;
-int colorgrid_height = 800;
+int panel_width = 240;
+
+int colorgrid_width = w - panel_width;
+int colorgrid_height = h;
 Vector[][] emptyColorGrid = new Vector[colorgrid_width][colorgrid_height];
 Vector[][] colorGrid = new Vector[colorgrid_width][colorgrid_height];
 int colorgrid_hoffset = 240;
@@ -23,7 +25,7 @@ int numIncrementors = 4;
 Button[] rectangleButtons = new Button[6];
 int numRectangleButtons = 6;
 
-int panel_width = 240;
+
 int radius_circle = 55;
 float leftover_space = panel_width - (2 * radius_circle);
 float color_gapX = leftover_space / 3;
@@ -49,7 +51,7 @@ int sliderMargin = 24;
 
 int numOpacityLevels = 10;
 int curOpacityLevel = 5;
-float opacityFactor = 0.001;
+float opacityFactor = 0.0005;
 
 int numRadiusLevels = 10;
 int curRadiusLevel = 5;
