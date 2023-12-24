@@ -3,6 +3,7 @@ class Vector {
   int start_a, start_b, start_c;
   float weight = 0;
   float factor = 0.005;
+  //Mixbox mixbox = new Mixbox();
   
   Vector(int one, int two, int three) {
     a = one;
@@ -84,22 +85,31 @@ class Vector {
     return retVal;
   }
   
-  void merge_pigment(int new_a, int new_b, int new_c, float u2) {
-    float[] new_z = encode(new_a, new_b, new_c);
-    float[] start_z = encode(start_a, start_b, start_c);
+  void merge_pigment(int new_a, int new_b, int new_c, float u2, Mixbox mixbox) {
     
-    float merged_1 = weight*new_z[0] + (1-weight)*start_z[0];
-    float merged_2 = weight*new_z[1] + (1-weight)*start_z[1];
-    float merged_3 = weight*new_z[2] + (1-weight)*start_z[2];
-    float merged_4 = weight*new_z[3] + (1-weight)*start_z[3];
-    float merged_5 = weight*new_z[4] + (1-weight)*start_z[4];
-    float merged_6 = weight*new_z[5] + (1-weight)*start_z[5];
-    float[] final_merge = {merged_1, merged_2, merged_3, merged_4, merged_5, merged_6};
+    float[] new_color = {new_a/255, new_b/255, new_c/255};
+    float[] start_color = {start_a/255, start_b/255, start_c/255};
+    float[] res = mixbox.lerpFloat(start_color, new_color, weight);
+    //print(res[0], res[1], res[2], weight, "\n");
+    ////print(res[0]*255, res[1]*255, res[2]*255, "\n");
+    ////float[] new_z = encode(new_a, new_b, new_c);
+    ////float[] start_z = encode(start_a, start_b, start_c);
     
-    float[] decoded = decode(final_merge);
-    a = round(decoded[0]);
-    b = round(decoded[1]);
-    c = round(decoded[2]);
+    ////float merged_1 = weight*new_z[0] + (1-weight)*start_z[0];
+    ////float merged_2 = weight*new_z[1] + (1-weight)*start_z[1];
+    ////float merged_3 = weight*new_z[2] + (1-weight)*start_z[2];
+    ////float merged_4 = weight*new_z[3] + (1-weight)*start_z[3];
+    ////float merged_5 = weight*new_z[4] + (1-weight)*start_z[4];
+    ////float merged_6 = weight*new_z[5] + (1-weight)*start_z[5];
+    ////float[] final_merge = {merged_1, merged_2, merged_3, merged_4, merged_5, merged_6};
+    
+    ////float[] decoded = decode(final_merge);
+    a = round(res[0]*255);
+    b = round(res[1]*255);
+    c = round(res[2]*255);
+    //a = round(decoded[0]);
+    //b = round(decoded[1]);
+    //c = round(decoded[2]);
   }
   
   void setStartColors() {

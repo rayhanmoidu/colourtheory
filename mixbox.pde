@@ -49,9 +49,10 @@
 
 
 import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.util.zip.Inflater;
 
-final class Mixbox {
+public final class Mixbox {
 
     public static final int LATENT_SIZE = 7;
 
@@ -337,7 +338,9 @@ final class Mixbox {
 
         try {
             byte[] deflatedBytes = new byte[113551 - 192];
-            DataInputStream dis = new DataInputStream(Mixbox.class.getResourceAsStream("mixbox_lut.dat"));
+            print("lala\n");
+            DataInputStream dis = new DataInputStream(new FileInputStream("./mixbox_lut.dat"));
+            print("lala3\n");
             dis.skipBytes(192);
             dis.readFully(deflatedBytes);
             dis.close();
@@ -350,7 +353,7 @@ final class Mixbox {
                 lut[i] = (byte)((((i & 63) != 0) ? lut[i - 1] : 127) + (lut[i] - 127));
             }
         } catch (Exception e) {
-
+            print("no");
         }
     }
 }

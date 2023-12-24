@@ -63,6 +63,8 @@ int spacing = 1;
 
 boolean isDrawMode = true;
 
+Mixbox mixbox;
+
 float[] destinationColor = {-1, -1, -1};
 float[] sampleColor = {-1, -1, -1};
 float[] winningColor = {-1, -1, -1};
@@ -74,18 +76,19 @@ int numGoals = 0;
 boolean hasWonThisRound = false;
 
 void setup() {
+  mixbox = new Mixbox();
   size(1200, 800);
   setupDefaultColors();
   setRandomDestinationColor();
   
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
-      emptyColorGrid[i][j] = new Vector(0, 0, 0);
+      emptyColorGrid[i][j] = new Vector(255,255, 255);
     }
   }
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
-      colorGrid[i][j] = new Vector(0, 0, 0);
+      colorGrid[i][j] = new Vector(255, 255, 255);
     }
   }
   
@@ -391,7 +394,8 @@ void placeStamp(int x, int y) {
       if (diff <= radius) {
         float u2 = (diff*diff) / (radius*radius);
         colorGrid[i][j].accumulateWeight(u2, opacityFactor * curOpacityLevel);
-        colorGrid[i][j].merge_light(cur_color_a, cur_color_b, cur_color_c, u2);
+        colorGrid[i][j].merge_pigment(cur_color_a, cur_color_b, cur_color_c, u2, mixbox);
+        //print("yes\n");
       }
     }
   }
