@@ -6,9 +6,9 @@ int panel_width = 240;
 
 int colorgrid_width = w - panel_width;
 int colorgrid_height = h;
-Vector[][] emptyColorGrid_white = new Vector[colorgrid_width][colorgrid_height];
-Vector[][] emptyColorGrid_black = new Vector[colorgrid_width][colorgrid_height];
-Vector[][] colorGrid = new Vector[colorgrid_width][colorgrid_height];
+CanvasPixel[][] emptyColorGrid_white = new CanvasPixel[colorgrid_width][colorgrid_height];
+CanvasPixel[][] emptyColorGrid_black = new CanvasPixel[colorgrid_width][colorgrid_height];
+CanvasPixel[][] colorGrid = new CanvasPixel[colorgrid_width][colorgrid_height];
 int colorgrid_hoffset = 240;
 int colorgrid_voffset = 0;
 
@@ -48,11 +48,6 @@ float hbarrier3_y = hbarrier2_y + buttonBoxHeight;
 float hbarrier4_y = hbarrier3_y + sliderBoxHeight * 5/6;
 float hbarrier5_y = hbarrier4_y + color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
 
-//float hbarrier1_y = color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
-//float hbarrier2_y = hbarrier1_y + color_gapX * 3;
-//float hbarrier3_y = hbarrier2_y + color_gapX + buttonHeight;
-//float hbarrier4_y = hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX + buttonHeight;
-//float hbarrier5_y = hbarrier4_y + colorbox_dimension;
 float vbarrier1_x = buttonGap*2 + buttonWidth;
 float vbarrier2_x = colorbox_dimension;
 float vbarrier3_x = colorbox_dimension;
@@ -99,13 +94,13 @@ void setup() {
   
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
-      emptyColorGrid_white[i][j] = new Vector(255, 255, 255);
-      emptyColorGrid_black[i][j] = new Vector(0, 0, 0);
+      emptyColorGrid_white[i][j] = new CanvasPixel(255, 255, 255);
+      emptyColorGrid_black[i][j] = new CanvasPixel(0, 0, 0);
     }
   }
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
-      colorGrid[i][j] = new Vector(255, 255, 255);
+      colorGrid[i][j] = new CanvasPixel(255, 255, 255);
     }
   }
   
@@ -138,10 +133,6 @@ void setup() {
       print("no");
   }
   
-  //float[] one = {255, 255, 0};
-  //float[] two = {}
-  //Mixbox.lerpFloat(start_color, new_color, weight, lut);
-  
   rectMode(RADIUS);  
 }
 
@@ -155,7 +146,7 @@ void setRandomDestinationColor() {
   hasWonThisRound = false;
 }
 
-Vector[][] copyCanvasValues(Vector[][] src, Vector[][] dest) {
+CanvasPixel[][] copyCanvasValues(CanvasPixel[][] src, CanvasPixel[][] dest) {
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
       dest[i][j].a = src[i][j].a;
@@ -260,17 +251,13 @@ void draw() {
   drawHBarrier(hbarrier1_y);
   drawHBarrier(hbarrier2_y);
   drawHBarrier(hbarrier3_y);
-  //drawHBarrier(hbarrier4_y);
   drawHBarrier(hbarrier4_y);
   drawHBarrier(hbarrier5_y);
+  
   drawVBarrier(vbarrier1_x, hbarrier2_y, hbarrier3_y);
   drawVBarrier(vbarrier2_x, 0, hbarrier1_y);
   drawVBarrier(vbarrier3_x, hbarrier1_y, hbarrier2_y);
-  
-  
-  
-  
-  //drawButtonS
+
 }
 
 void drawResult() {
@@ -576,7 +563,7 @@ void mousePressed() {
     for (int i = 0; i < numRectangleButtons; i++) {
       if (rectangleButtons[i].testClick(mouseX, mouseY)) {
         if (rectangleButtons[i].buttonId == "Reset") {
-          Vector[][] gridToSet = isPigmentMode ? emptyColorGrid_white : emptyColorGrid_black;
+          CanvasPixel[][] gridToSet = isPigmentMode ? emptyColorGrid_white : emptyColorGrid_black;
           colorGrid = copyCanvasValues(gridToSet, colorGrid);
         } else if (rectangleButtons[i].buttonId == "Draw") {
           isDrawMode = true;
