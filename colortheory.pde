@@ -1,12 +1,13 @@
 boolean mouselocked = false;
 
-int w = 1200;
-int h = 800;
+int w = 1179;
+int h = 786;
 int panel_width = 240;
 
 int colorgrid_width = w - panel_width;
 int colorgrid_height = h;
-Vector[][] emptyColorGrid = new Vector[colorgrid_width][colorgrid_height];
+Vector[][] emptyColorGrid_white = new Vector[colorgrid_width][colorgrid_height];
+Vector[][] emptyColorGrid_black = new Vector[colorgrid_width][colorgrid_height];
 Vector[][] colorGrid = new Vector[colorgrid_width][colorgrid_height];
 int colorgrid_hoffset = 240;
 int colorgrid_voffset = 0;
@@ -36,12 +37,22 @@ float buttonHeight = 15;
 float buttonGap = (panel_width - 3*buttonWidth) / 5;
 float colorbox_dimension = panel_width / 2;
 float colorbox_gap = (colorbox_dimension - radius_circle) / 2;
+float buttonBoxHeight = color_gapX + buttonHeight;
+float samplebutton_gap = (colorbox_dimension - buttonWidth*2) / 3;
+float sliderBoxHeight = color_gapX * 4;
 
-float hbarrier1_y = color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
-float hbarrier2_y = hbarrier1_y + color_gapX * 3;
-float hbarrier3_y = hbarrier2_y + color_gapX + buttonHeight;
-float hbarrier4_y = hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX + buttonHeight;
-float hbarrier5_y = hbarrier4_y + colorbox_dimension;
+
+float hbarrier1_y = radius_circle + 2*buttonBoxHeight;
+float hbarrier2_y = hbarrier1_y + colorbox_dimension;
+float hbarrier3_y = hbarrier2_y + buttonBoxHeight;
+float hbarrier4_y = hbarrier3_y + sliderBoxHeight * 5/6;
+float hbarrier5_y = hbarrier4_y + color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
+
+//float hbarrier1_y = color_gapX*2 + radius_circle + (numColorRows - 1)*color_gapY;
+//float hbarrier2_y = hbarrier1_y + color_gapX * 3;
+//float hbarrier3_y = hbarrier2_y + color_gapX + buttonHeight;
+//float hbarrier4_y = hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX + buttonHeight;
+//float hbarrier5_y = hbarrier4_y + colorbox_dimension;
 float vbarrier1_x = buttonGap*2 + buttonWidth;
 float vbarrier2_x = colorbox_dimension;
 float vbarrier3_x = colorbox_dimension;
@@ -49,19 +60,20 @@ float vbarrier3_x = colorbox_dimension;
 
 int sliderMargin = 24;
 
-int numOpacityLevels = 10;
-int curOpacityLevel = 5;
-float opacityFactor = 0.005;
+int numOpacityLevels = 16;
+int curOpacityLevel = 8;
+float opacityFactor = 0.003125;
 
-int numRadiusLevels = 10;
-int curRadiusLevel = 5;
-float radiusFactor = 10;
+int numRadiusLevels = 16;
+int curRadiusLevel = 8;
+float radiusFactor = 5;
 
 int laststamp_x = -1;
 int laststamp_y = -1;
 int spacing = 5;
 
 boolean isDrawMode = true;
+boolean isPigmentMode = true;
 
 Mixbox mixbox;
 
@@ -78,14 +90,17 @@ boolean hasWonThisRound = false;
 byte lut[];
 
 void setup() {
+  print(hbarrier5_y);
+
   mixbox = new Mixbox();
-  size(1200, 800);
+  size(1179, 786);
   setupDefaultColors();
   setRandomDestinationColor();
   
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
-      emptyColorGrid[i][j] = new Vector(255,255, 255);
+      emptyColorGrid_white[i][j] = new Vector(255, 255, 255);
+      emptyColorGrid_black[i][j] = new Vector(0, 0, 0);
     }
   }
   for (int i = 0; i < colorgrid_width; i++) {
@@ -131,23 +146,43 @@ void setup() {
 }
 
 void setRandomDestinationColor() {
-  destinationColor[0] = random(0, 255);
-  destinationColor[1] = random(0, 255);
-  destinationColor[2] = random(0, 255);
+  float offset = 30;
+  destinationColor[0] = random(0+offset, 255-offset);
+  destinationColor[1] = random(0+offset, 255-offset);
+  destinationColor[2] = random(0+offset, 255-offset);
   numGoals ++;
   finalResult = -1;
   hasWonThisRound = false;
 }
 
-Vector[][] copyCanvasColors(Vector[][] src, Vector[][] dest) {
+Vector[][] copyCanvasValues(Vector[][] src, Vector[][] dest) {
   for (int i = 0; i < colorgrid_width; i++) {
     for (int j = 0; j < colorgrid_height; j++) {
       dest[i][j].a = src[i][j].a;
       dest[i][j].b = src[i][j].b;
       dest[i][j].c = src[i][j].c;
+      dest[i][j].hasChanged = src[i][j].hasChanged;
     }
   }
   return dest;
+}
+
+void toggleGridBackground() {
+  for (int i = 0; i < colorgrid_width; i++) {
+    for (int j = 0; j < colorgrid_height; j++) {
+      if (!colorGrid[i][j].hasChanged) {
+        if (isPigmentMode) {
+          colorGrid[i][j].a = 255;
+          colorGrid[i][j].b = 255;
+          colorGrid[i][j].c = 255;
+        } else {
+          colorGrid[i][j].a = 0;
+          colorGrid[i][j].b = 0;
+          colorGrid[i][j].c = 0;
+        }
+      }
+    }
+  }
 }
 
 void setupDefaultColors() {
@@ -158,12 +193,15 @@ void setupDefaultColors() {
   int[] black = {0, 0, 0};
   int[] white = {255, 255, 255};
   
-  int[][] colors = {red, blue, yellow, black, white};
+  int[][] colors = {red, blue, green, black, white};
+  if (isPigmentMode) {
+    colors[2] = yellow;
+  }
     
   for (int i = 0; i < colors.length; i++) {
     float xMult = (i%2==0) ? 0.5 : 1.5;
     float gapMult = (i%2==0) ? 1 : 2;
-    Button newcolor = new Button("circle", colors[i][0], colors[i][1], colors[i][2], (color_gapX*gapMult) + (radius_circle * xMult), color_gapX + (radius_circle / 2) + color_gapY * (i / 2), radius_circle, radius_circle);
+    Button newcolor = new Button("circle", colors[i][0], colors[i][1], colors[i][2], (color_gapX*gapMult) + (radius_circle * xMult), hbarrier4_y + color_gapX + (radius_circle / 2) + color_gapY * (i / 2), radius_circle, radius_circle);
     baseColors[i] = newcolor;
   }
 }
@@ -179,29 +217,59 @@ void draw() {
   }
   
   // Control Panel
-  drawColors();
-  drawHBarrier(hbarrier1_y);
-  drawSlider(hbarrier1_y, curOpacityLevel, "opacity", 0);
-  drawSlider(hbarrier1_y + color_gapX, curRadiusLevel, "radius", 2);
-  drawHBarrier(hbarrier2_y);
   
-  drawButton(buttonGap, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Reset", true, 0);
-  drawVBarrier(vbarrier1_x, hbarrier2_y, hbarrier3_y);
-  drawButton(buttonGap*3 + buttonWidth, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Draw", isDrawMode, 1);
-  drawButton(buttonGap*4 + buttonWidth*2, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Sample", !isDrawMode, 2);
-  drawHBarrier(hbarrier3_y);
-  drawHBarrier(hbarrier4_y);
-  drawHBarrier(hbarrier5_y);
-  drawVBarrier(vbarrier2_x, hbarrier3_y, hbarrier4_y);
-  drawVBarrier(vbarrier3_x, hbarrier4_y, hbarrier5_y);
+  // Goal / Sample colors
   drawColor(true);
   drawColor(false);
-  drawButton(colorbox_dimension/2 - buttonWidth/2, hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX/2, buttonWidth, buttonHeight, "Refresh", true, 3);
-  float samplebutton_gap = (colorbox_dimension - buttonWidth*2) / 3;
-  drawButton(colorbox_dimension + samplebutton_gap, hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX/2, buttonWidth, buttonHeight, "Submit", true, 4);
-  drawButton(colorbox_dimension + samplebutton_gap*2 + buttonWidth, hbarrier3_y + colorbox_dimension - colorbox_gap + color_gapX/2, buttonWidth, buttonHeight, "Save", true, 5);
+  textSize(16);
+  fill(0);
+  textAlign(CENTER, CENTER);
+  
+  text("Goal", colorbox_dimension/2, buttonBoxHeight/2);
+  text("Sample", colorbox_dimension*1.5, buttonBoxHeight/2);
+  drawButton(colorbox_dimension/2 - buttonWidth/2, buttonBoxHeight + radius_circle + color_gapX/2, buttonWidth, buttonHeight, "Refresh", true, 3);
+  drawButton(colorbox_dimension + samplebutton_gap, buttonBoxHeight + radius_circle + color_gapX/2, buttonWidth, buttonHeight, "Submit", true, 4);
+  drawButton(colorbox_dimension + samplebutton_gap*2 + buttonWidth, buttonBoxHeight + radius_circle + color_gapX/2, buttonWidth, buttonHeight, "Save", true, 5);
+  
+  // Score / Result
   drawScore();
   drawResult();
+  
+  // Button Row
+  drawButton(buttonGap, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Reset", true, 0);
+  drawButton(buttonGap*3.5 + buttonWidth, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Draw", isDrawMode, 1);
+  drawButton(buttonGap*3.5 + buttonWidth*2, hbarrier2_y + color_gapX/2, buttonWidth, buttonHeight, "Sample", !isDrawMode, 2);
+  
+  // Button Row 2
+  //drawButton(buttonGap*3.5 + buttonWidth, hbarrier3_y + color_gapX/2, buttonWidth, buttonHeight, "Pigment", isPigmentMode, 6);
+  //drawButton(buttonGap*3.5 + buttonWidth*2, hbarrier3_y + color_gapX/2, buttonWidth, buttonHeight, "Light", !isPigmentMode, 7);
+  
+  
+  // Sliders
+  textSize(12);
+  fill(0);
+  text("Opacity", panel_width / 2, hbarrier3_y + sliderBoxHeight * 1/6);
+  text("Radius", panel_width / 2, hbarrier3_y + sliderBoxHeight * 3/6);
+  drawSlider(hbarrier3_y + sliderBoxHeight * 2/6 - color_gapX, curOpacityLevel, "opacity", 0, numOpacityLevels, curOpacityLevel==numOpacityLevels);
+  drawSlider(hbarrier3_y + sliderBoxHeight * 4/6 - color_gapX, curRadiusLevel, "radius", 2, numRadiusLevels, curRadiusLevel==numRadiusLevels);
+  
+  // Colors
+  drawColors();
+  
+  // Barriers
+  drawHBarrier(hbarrier1_y);
+  drawHBarrier(hbarrier2_y);
+  drawHBarrier(hbarrier3_y);
+  //drawHBarrier(hbarrier4_y);
+  drawHBarrier(hbarrier4_y);
+  drawHBarrier(hbarrier5_y);
+  drawVBarrier(vbarrier1_x, hbarrier2_y, hbarrier3_y);
+  drawVBarrier(vbarrier2_x, 0, hbarrier1_y);
+  drawVBarrier(vbarrier3_x, hbarrier1_y, hbarrier2_y);
+  
+  
+  
+  
   //drawButtonS
 }
 
@@ -214,17 +282,17 @@ void drawResult() {
   textSize(32);
   if (finalResult >= 95) {
     fill(winningColor[0], winningColor[1], winningColor[2]);    
-    text(finalres_string, colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 - 20);
+    text(finalres_string, colorbox_dimension*1.5, hbarrier1_y + colorbox_dimension/2 - 20);
     //fill(255 - sampleColor[0], 255 - sampleColor[1], 255 - sampleColor[2]);
     textSize(24);
-    text("YAY!", colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 + 20);
+    text("YAY!", colorbox_dimension*1.5, hbarrier1_y + colorbox_dimension/2 + 20);
     
   } else {
     fill(0);
-    text(finalres_string, colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 - 20);
+    text(finalres_string, colorbox_dimension*1.5, hbarrier1_y + colorbox_dimension/2 - 20);
     //fill(255, 255, 255);
     textSize(24);
-    text("Oh no :(", colorbox_dimension*1.5, hbarrier4_y + colorbox_dimension/2 + 20);
+    text("Oh no :(", colorbox_dimension*1.5, hbarrier1_y + colorbox_dimension/2 + 20);
   }
 }
 
@@ -232,25 +300,26 @@ void drawScore() {
   textSize(32);
   strokeWeight(2);
   float result_fractionWidth = 24;
-  text(numCorrect, colorbox_dimension/2, hbarrier4_y + colorbox_dimension/2 - 20);
-  line(colorbox_dimension/2 - result_fractionWidth/2, hbarrier4_y + colorbox_dimension/2, colorbox_dimension/2 + result_fractionWidth/2, hbarrier4_y + colorbox_dimension/2);
-  text(numGoals, colorbox_dimension/2, hbarrier4_y + colorbox_dimension/2 + 20);
+  text(numCorrect, colorbox_dimension/2, hbarrier1_y + colorbox_dimension/2 - 20);
+  line(colorbox_dimension/2 - result_fractionWidth/2, hbarrier1_y + colorbox_dimension/2, colorbox_dimension/2 + result_fractionWidth/2, hbarrier1_y + colorbox_dimension/2);
+  text(numGoals, colorbox_dimension/2, hbarrier1_y + colorbox_dimension/2 + 20);
+  strokeWeight(1);
 }
 
 void drawColor(boolean isDestination) {
   if (isDestination) {
     fill(destinationColor[0], destinationColor[1], destinationColor[2]);
     stroke(destinationColor[0], destinationColor[1], destinationColor[2]);
-    circle(colorbox_dimension / 2, hbarrier3_y + colorbox_dimension / 2, radius_circle);
+    circle(colorbox_dimension / 2, hbarrier1_y / 2, radius_circle);
   } else {
     if (sampleColor[0]==-1 && sampleColor[1]==-1 && sampleColor[2]==-1) {
       stroke(0);
       fill(175);
-      circle(colorbox_dimension * 1.5, hbarrier3_y + colorbox_dimension / 2, radius_circle);
+      circle(colorbox_dimension * 1.5, hbarrier1_y / 2, radius_circle);
     } else {
       fill(sampleColor[0], sampleColor[1], sampleColor[2]);
       stroke(sampleColor[0], sampleColor[1], sampleColor[2]);
-      circle(colorbox_dimension * 1.5, hbarrier3_y + colorbox_dimension / 2, radius_circle);
+      circle(colorbox_dimension * 1.5, hbarrier1_y / 2, radius_circle);
     }
   }
   stroke(0);
@@ -286,12 +355,12 @@ void drawButton(float xPos, float yPos, float rectw, float recth, String id, boo
   }
 }
 
-void drawSlider(float yPos, float value, String sliderId, int buttonStartIndex) {
+void drawSlider(float yPos, float value, String sliderId, int buttonStartIndex, int numLevels, boolean isMaxVal) {
   stroke(0, 0, 0);
   strokeWeight(2);
   float outerTickLength = 5;
   float innerTickLength = 3;
-  float innerTickGap = (panel_width - 2*color_gapX - 2*sliderMargin) / numOpacityLevels;
+  float innerTickGap = (panel_width - 2*color_gapX - 2*sliderMargin) / numLevels;
   
   // Opacity slider
   // Main line
@@ -301,13 +370,21 @@ void drawSlider(float yPos, float value, String sliderId, int buttonStartIndex) 
   line(panel_width - color_gapX - sliderMargin, yPos + color_gapX - outerTickLength, panel_width - color_gapX - sliderMargin, yPos + color_gapX + outerTickLength);
   // Inner ticks
   strokeWeight(1);
-  for (int i = 1; i <= numOpacityLevels; i++) {
+  for (int i = 1; i <= numLevels; i++) {
     line(color_gapX + sliderMargin + innerTickGap*i, yPos + color_gapX - innerTickLength, color_gapX + sliderMargin + innerTickGap*i, yPos + color_gapX + innerTickLength);
   }
   // Value indicator
   strokeWeight(3);
-  stroke(255, 255, 0);
-  line(color_gapX + sliderMargin + 3, yPos + color_gapX, color_gapX + sliderMargin + innerTickGap*value, yPos + color_gapX);
+  stroke(0, 255, 0);
+  fill(0, 255, 0);
+  int gap = 5;
+  if (isMaxVal) {
+    gap = 6;
+  }
+  if (value>0) {
+    rect(color_gapX + sliderMargin + 3, yPos + color_gapX - 1, innerTickGap*value - gap, 2);
+  }
+  //line(color_gapX + sliderMargin + 3, yPos + color_gapX, color_gapX + sliderMargin + innerTickGap*value, yPos + color_gapX);
   
   // Incrementors
   // circles
@@ -343,7 +420,7 @@ void drawColors() {
       strokeWeight(1);
       stroke(0);
       fill(175);
-      circle((color_gapX*2) + (radius_circle * 1.5), color_gapX + (radius_circle / 2) + color_gapY * (2), radius_circle);
+      circle((color_gapX*2) + (radius_circle * 1.5), hbarrier4_y + color_gapX + (radius_circle / 2) + color_gapY * (2), radius_circle);
   }
 }
 
@@ -426,7 +503,11 @@ void placeStamp(int x, int y) {
       if (diff <= radius) {
         float u2 = (diff*diff) / (radius*radius);
         colorGrid[i][j].accumulateWeight(u2, opacityFactor * curOpacityLevel);
-        colorGrid[i][j].merge_pigment(cur_color_a, cur_color_b, cur_color_c, u2, lut);
+        if (isPigmentMode) {
+          colorGrid[i][j].merge_pigment(cur_color_a, cur_color_b, cur_color_c, u2, lut);
+        } else {
+          colorGrid[i][j].merge_light(cur_color_a, cur_color_b, cur_color_c, u2);
+        }
         //print("yes\n");
       }
     }
@@ -495,11 +576,20 @@ void mousePressed() {
     for (int i = 0; i < numRectangleButtons; i++) {
       if (rectangleButtons[i].testClick(mouseX, mouseY)) {
         if (rectangleButtons[i].buttonId == "Reset") {
-          colorGrid = copyCanvasColors(emptyColorGrid, colorGrid);
+          Vector[][] gridToSet = isPigmentMode ? emptyColorGrid_white : emptyColorGrid_black;
+          colorGrid = copyCanvasValues(gridToSet, colorGrid);
         } else if (rectangleButtons[i].buttonId == "Draw") {
           isDrawMode = true;
         } else if (rectangleButtons[i].buttonId == "Sample") {
           isDrawMode = false;
+        } else if (rectangleButtons[i].buttonId == "Pigment") {
+          isPigmentMode = true;
+          toggleGridBackground();
+          setupDefaultColors();
+        } else if (rectangleButtons[i].buttonId == "Light") {
+          isPigmentMode = false;
+          toggleGridBackground();
+          setupDefaultColors();
         } else if (rectangleButtons[i].buttonId == "Refresh") {
           setRandomDestinationColor();
         } else if (rectangleButtons[i].buttonId == "Submit") {
@@ -514,7 +604,7 @@ void mousePressed() {
 
 void saveSampleColor() {
   numColors = min(6, numColors+1);
-  Button newcolor = new Button("circle", int(sampleColor[0]), int(sampleColor[1]), int(sampleColor[2]), (color_gapX*2) + (radius_circle * 1.5), color_gapX + (radius_circle / 2) + color_gapY * (2), radius_circle, radius_circle);
+  Button newcolor = new Button("circle", int(sampleColor[0]), int(sampleColor[1]), int(sampleColor[2]), (color_gapX*2) + (radius_circle * 1.5), hbarrier4_y + color_gapX + (radius_circle / 2) + color_gapY * (2), radius_circle, radius_circle);
   baseColors[5] = newcolor;
 }
 

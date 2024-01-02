@@ -2,7 +2,7 @@ class Vector {
   int a, b, c;
   int start_a, start_b, start_c;
   float weight = 0;
-  float factor = 0.005;
+  boolean hasChanged = false;
   //Mixbox mixbox = new Mixbox();
   
   Vector(int one, int two, int three) {
@@ -23,6 +23,9 @@ class Vector {
    
   
   void merge_light(int new_a, int new_b, int new_c, float u2) {
+      if (!hasChanged) {
+        hasChanged = true;
+      }
       // for black in light mode, need to make a override toggle
     ` // use percents not raw vals, 001 should be 100% fac_c, 000 100% all
       // for ovverride, facs are all 1
@@ -45,16 +48,16 @@ class Vector {
       }
       
       
-       
+
       
       //if (new_a < 255 && new_b < 255 && new_c < 255) {
 
       ////print(fac_a, fac_b, fac_c, "\n");
       //}
       
-      float finalWeight_a = weight * fac_a;
-      float finalWeight_b = weight * fac_b;
-      float finalWeight_c = weight * fac_c;
+      float finalWeight_a = weight * 1;
+      float finalWeight_b = weight * 1;
+      float finalWeight_c = weight * 1;
       
       a = round( finalWeight_a*new_a + (1-finalWeight_a)*start_a );
       b = round( finalWeight_b*new_b + (1-finalWeight_b)*start_b );
@@ -86,6 +89,10 @@ class Vector {
   }
   
   void merge_pigment(int new_a, int new_b, int new_c, float u2, byte[] lut) {
+    
+    if (!hasChanged) {
+      hasChanged = true;
+    }
     
     float[] new_color = {float(new_a)/255, float(new_b)/255, float(new_c)/255};
     float[] start_color = {float(start_a)/255, float(start_b)/255, float(start_c)/255};
@@ -123,7 +130,7 @@ class Vector {
   }
   
   void accumulateWeight(float u2, float opacity) {
-    weight += (1-weight) * opacity * (1-u2);
+    weight += (1-weight) * (opacity) * (1-u2);
     weight = min(1, weight);
   }
   
